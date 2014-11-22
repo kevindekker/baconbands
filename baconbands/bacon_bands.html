@@ -1,0 +1,166 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Bacon Bands</title>
+</head>
+
+<script type='text/javascript' src='http://code.jquery.com/jquery-latest.min.js'></script>
+
+<script language="javascript">
+
+var wikiViews = {};
+var currentBand = "";
+
+// text needs to be capitalized - SOMETIMES... this might be the killer
+// bandmembers thare aren't linked do not have []
+// singer/band
+// going to need to remove "touring members"
+// if array element does not contain a-z, then remove it
+
+//if former members sends it to a section....  Well, maybe fuck it.
+
+$(document).ready(function() {
+	currentBand=prompt("Please enter a band name:","Led Zeppelin");
+	getBand(currentBand);
+});
+
+function getBand(passedString){
+	$.getJSON( "http://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=content&format=json&titles=" + passedString + "&rvsection=0&callback=?", 
+		function(data) 
+			{
+				var pageid = 0;
+				for (var key in data.query.pages) {
+					pageid=key;
+				}
+
+				wikiViews = data.query.pages[pageid].revisions[0]['*'];
+
+				console.log(getMembers(wikiViews));
+		});
+}
+
+function stripper(passedString){
+	str = passedString;
+
+	if (str.indexOf('= ') !== -1){
+		str = str.split("= ");
+		str = str[1];
+	}
+
+	if (str.indexOf('\n') !== -1){
+		str = str.split("\n");
+		str = str[0];
+	}
+
+	if (str.indexOf('}}') !== -1){
+		str = str.split("}}");
+		str = str[0];
+	}
+
+	//this WAS working and now it is not
+	if (str.indexOf('<!--') !== -1){
+		str = str.replace(/(?=<!--).*(?=-->)/g, "");
+		str = str.replace("-->", "");
+	}
+
+	return str;
+}
+
+function separateMembers(passedString){
+	// thanks wikipedia for making things different
+	str = passedString;
+	if (str.indexOf('<br>') != -1){
+		str = str.split("<br>");
+	}
+	else if (str.indexOf('<br />') != -1){
+		str = str.split("<br />");
+	}
+	else {
+		str = [str];
+	}
+	return str;
+}
+
+function getMembers(passedString){
+	var allMembers = [];
+
+	// start with current members
+	if (passedString.indexOf('current_members') != -1){
+		str = passedString.split("current_members"); 
+		str = str[1];
+
+
+	}
+
+	if (passedString.indexOf('Touring members:') != -1){
+		str = str.split('Touring members:');
+		str = str[0];
+	}
+
+	// else if (str.indexOf('|past_members') != -1){
+	// 	str = str.split("|past_members"); 
+	// 	str = str[0];
+	// }
+
+	str = str.split("= ");
+
+
+	str = str[1].split("\n");
+
+	str = str[0];
+
+	str = stripper(str);
+
+	allMembers = separateMembers(str);
+
+	//on to the past members
+	str = passedString;
+
+	if (str.indexOf('past_members') != -1){
+		str = str.split("past_members"); 
+		str = str[1];
+	}
+
+	if (str.indexOf('}}') != -1){
+		str = str.split("}}"); 
+		str = str[0];
+	}
+
+	str = stripper(str);
+	str = separateMembers(str);
+
+	for (var i = 0; i<str.length; i++){
+		allMembers.push(str[i]);
+	}
+
+	return allMembers;
+}
+
+// here's a nice for loop for later usage
+// for (var key in data.query.pages) {
+// 	pageid=key;
+//    	var obj = data.query.pages[key];
+//    	for (var prop in obj) {
+//       // important check that this is objects own property 
+//       // not from prototype prop inherited
+//       // console.log(pageid);
+//       if (prop == "pageid"){
+//       	console.log("hey, found it");
+//       }
+//       // if(obj.hasOwnProperty(prop)){
+//       //   console.log(prop + " = " + obj[prop]);
+//       // }
+//    }
+
+
+</script>
+ 
+<body>
+
+<canvas id="cvs" width="800px" height="800px">
+</canvas> 
+
+<div id="bL"></div>
+</body>
+</html>
